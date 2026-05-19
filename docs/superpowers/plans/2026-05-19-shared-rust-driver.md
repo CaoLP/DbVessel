@@ -264,7 +264,7 @@ git commit -m "feat: implement global db connection manager using sqlx AnyPool"
 - Create: `packages/shared-rust/src/executor.rs`
 - Modify: `packages/shared-rust/src/lib.rs`
 
-- [ ] **Step 1: Viết logic thực thi SQL**
+- [x] **Step 1: Viết logic thực thi SQL**
 
 Tạo `packages/shared-rust/src/executor.rs`:
 
@@ -311,7 +311,7 @@ pub async fn execute_query_internal(connection_id: &str, query: &str) -> Result<
 }
 ```
 
-- [ ] **Step 2: Đưa executor vào lib.rs**
+- [x] **Step 2: Đưa executor vào lib.rs**
 
 Sửa `packages/shared-rust/src/lib.rs`:
 
@@ -344,7 +344,7 @@ pub fn execute_query(connection_id: String, query: String) -> Result<QueryResult
 Run: `cd packages/shared-rust && cargo build`
 Expected: Build thành công.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add packages/shared-rust/src/
