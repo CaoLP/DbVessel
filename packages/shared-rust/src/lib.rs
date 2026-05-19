@@ -1,5 +1,5 @@
-pub mod connection;
-pub mod sql_engine;
-pub mod mongo_engine;
+uniffi::include_scaffolding!("shared_rust");
 
-uniffi::setup_scaffolding!();
+pub fn hello_world() -> String {
+    "Hello from Rust!".to_string()
+}

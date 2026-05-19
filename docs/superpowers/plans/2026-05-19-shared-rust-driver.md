@@ -17,7 +17,7 @@
 - Create: `packages/shared-rust/build.rs`
 - Create: `packages/shared-rust/src/lib.rs`
 
-- [ ] **Step 1: Khởi tạo Cargo.toml với dependencies**
+- [x] **Step 1: Khởi tạo Cargo.toml với dependencies**
 
 Thêm nội dung sau vào `packages/shared-rust/Cargo.toml`:
 
@@ -43,7 +43,7 @@ uuid = { version = "1.4", features = ["v4"] }
 uniffi = { version = "0.27", features = ["build"] }
 ```
 
-- [ ] **Step 2: Viết build script cho UniFFI**
+- [x] **Step 2: Viết build script cho UniFFI**
 
 Tạo `packages/shared-rust/build.rs`:
 
@@ -53,7 +53,7 @@ fn main() {
 }
 ```
 
-- [ ] **Step 3: Khởi tạo lib.rs và kiểm tra build**
+- [x] **Step 3: Khởi tạo lib.rs và kiểm tra build**
 
 Tạo `packages/shared-rust/src/lib.rs`:
 
@@ -76,7 +76,7 @@ namespace shared_rust {
 Run: `cd packages/shared-rust && cargo build`
 Expected: Build thành công (có thể có cảnh báo unused imports).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/shared-rust/Cargo.toml packages/shared-rust/build.rs packages/shared-rust/src/lib.rs packages/shared-rust/src/shared_rust.udl
