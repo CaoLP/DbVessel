@@ -206,7 +206,7 @@ git commit -m "chore: install monaco-editor and ag-grid dependencies for desktop
 - Create: `apps/desktop/src/components/EditorPanel.tsx`
 - Create: `apps/desktop/src/components/DataGrid.tsx`
 
-- [ ] **Step 1: Tạo DataGrid Component**
+- [x] **Step 1: Tạo DataGrid Component**
 
 Tạo `apps/desktop/src/components/DataGrid.tsx`:
 
@@ -243,7 +243,7 @@ export const DataGrid: React.FC<DataGridProps> = ({ rowData }) => {
 };
 ```
 
-- [ ] **Step 2: Tạo EditorPanel Component**
+- [x] **Step 2: Tạo EditorPanel Component**
 
 Tạo `apps/desktop/src/components/EditorPanel.tsx`:
 
@@ -293,7 +293,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({ onExecute, isLoading }
 };
 ```
 
-- [ ] **Step 3: Thêm style tuỳ chỉnh cho Grid**
+- [x] **Step 3: Thêm style tuỳ chỉnh cho Grid**
 
 Thêm đoạn CSS sau vào cuối file `apps/desktop/src/index.css`:
 
@@ -306,7 +306,7 @@ Thêm đoạn CSS sau vào cuối file `apps/desktop/src/index.css`:
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/desktop/src/components/ apps/desktop/src/index.css
