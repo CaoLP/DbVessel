@@ -183,7 +183,7 @@ git commit -m "feat: setup tauri ipc commands delegating to shared-rust core"
 **Files:**
 - Modify: `apps/desktop/package.json`
 
-- [ ] **Step 1: Cài đặt thư viện Editor và Grid**
+- [x] **Step 1: Cài đặt thư viện Editor và Grid**
 
 Chạy lệnh cài đặt từ thư mục `apps/desktop`:
 ```bash
@@ -191,7 +191,7 @@ cd apps/desktop
 npm install @monaco-editor/react ag-grid-react ag-grid-community
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/desktop/package.json apps/desktop/package-lock.json
