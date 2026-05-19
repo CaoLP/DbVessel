@@ -170,7 +170,7 @@ git commit -m "feat: define shared-rust uniffi schema and models"
 - Create: `packages/shared-rust/src/connection.rs`
 - Modify: `packages/shared-rust/src/lib.rs`
 
-- [ ] **Step 1: Viết logic quản lý Connection Pool**
+- [x] **Step 1: Viết logic quản lý Connection Pool**
 
 Tạo `packages/shared-rust/src/connection.rs`:
 
@@ -214,7 +214,7 @@ pub async fn disconnect_internal(connection_id: &str) -> Result<(), String> {
 }
 ```
 
-- [ ] **Step 2: Cập nhật lib.rs để sử dụng Tokio Runtime**
+- [x] **Step 2: Cập nhật lib.rs để sử dụng Tokio Runtime**
 
 Vì UniFFI exports synchronous functions mặc định (nếu không dùng `async` trong UDL), ta sẽ dùng `tokio::runtime` để block on the async functions.
 
@@ -249,7 +249,7 @@ pub fn execute_query(connection_id: String, query: String) -> Result<QueryResult
 Run: `cd packages/shared-rust && cargo check`
 Expected: Check passes.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add packages/shared-rust/src/
