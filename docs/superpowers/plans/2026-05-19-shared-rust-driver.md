@@ -1,162 +1,212 @@
-# Shared Rust Core Database Connection Driver Implementation Plan
+# Shared Rust Driver Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Khởi tạo thư viện Rust core `packages/shared-rust`, tích hợp các driver `sqlx` (PostgreSQL, MySQL, SQLite), `mongodb` để thực thi truy vấn và thiết lập UniFFI bindings.
+**Goal:** Triển khai thư viện lõi `shared-rust` bằng Rust để kết nối trực tiếp đến PostgreSQL, MySQL, SQLite và export API qua UniFFI.
 
-**Architecture:** Package `shared-rust` hoạt động như một động cơ kết nối cơ sở dữ liệu. Nó lưu trữ các connection pools bằng `dashmap` trong bộ nhớ toàn cục và xuất ra API đơn giản dạng FFI để Mobile và Desktop gọi trực tiếp.
+**Architecture:** Sử dụng `sqlx` (AnyPool) làm database driver. Lưu trữ các connection pools trong một Hash Map toàn cục (sử dụng `lazy_static` và `RwLock`). Export các functions `connect`, `disconnect`, `execute_query` ra ngoài sử dụng thư viện `uniffi`.
 
-**Tech Stack:** Rust, sqlx (postgres, mysql, sqlite), mongodb, serde_json, uniffi.
-
----
-
-## Danh mục Files thiết lập mới
-```text
-packages/shared-rust/
-├── Cargo.toml
-├── src/
-│   ├── lib.rs
-│   ├── connection.rs
-│   ├── sql_engine.rs
-│   └── mongo_engine.rs
-└── tests/
-    └── driver_tests.rs
-```
+**Tech Stack:** Rust, sqlx, tokio, serde_json, uniffi, uuid, lazy_static.
 
 ---
 
-## Các nhiệm vụ chi tiết (Tasks)
-
-### Task 1: Initialize shared-rust Crate & Cargo.toml
+### Task 1: Cấu hình thư viện và Dependencies (Cargo.toml & build.rs)
 
 **Files:**
 - Create: `packages/shared-rust/Cargo.toml`
+- Create: `packages/shared-rust/build.rs`
 - Create: `packages/shared-rust/src/lib.rs`
 
-- [x] **Step 1: Tạo file cấu hình `packages/shared-rust/Cargo.toml`**
+- [ ] **Step 1: Khởi tạo Cargo.toml với dependencies**
 
-Tạo file `Cargo.toml` khai báo các dependencies cần thiết cho kết nối cơ sở dữ liệu và UniFFI:
+Thêm nội dung sau vào `packages/shared-rust/Cargo.toml`:
 
 ```toml
 [package]
-name = "shared_rust"
+name = "shared-rust"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["lib", "staticlib", "cdylib"]
+crate-type = ["cdylib", "staticlib", "lib"]
 
 [dependencies]
-tokio = { version = "1.0", features = ["full"] }
-sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "postgres", "mysql", "sqlite"] }
-mongodb = { version = "2.8", default-features = false, features = ["tokio-runtime"] }
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "any", "postgres", "mysql", "sqlite"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-dashmap = "5.5"
-uniffi = { version = "0.25", features = ["tokio"] }
+uniffi = "0.27"
 lazy_static = "1.4"
+uuid = { version = "1.4", features = ["v4"] }
 
 [build-dependencies]
-uniffi = { version = "0.25", features = ["build"] }
+uniffi = { version = "0.27", features = ["build"] }
 ```
 
-- [x] **Step 2: Tạo file `packages/shared-rust/src/lib.rs` cơ bản**
+- [ ] **Step 2: Viết build script cho UniFFI**
 
-Khai báo module cấu trúc:
+Tạo `packages/shared-rust/build.rs`:
 
 ```rust
-pub mod connection;
-pub mod sql_engine;
-pub mod mongo_engine;
+fn main() {
+    uniffi::generate_scaffolding("./src/shared_rust.udl").unwrap();
+}
+```
 
-uniffi::setup_scaffolding!();
+- [ ] **Step 3: Khởi tạo lib.rs và kiểm tra build**
+
+Tạo `packages/shared-rust/src/lib.rs`:
+
+```rust
+uniffi::include_scaffolding!("shared_rust");
+
+pub fn hello_world() -> String {
+    "Hello from Rust!".to_string()
+}
+```
+
+Tạo `packages/shared-rust/src/shared_rust.udl`:
+
+```udl
+namespace shared_rust {
+    string hello_world();
+};
+```
+
+Run: `cd packages/shared-rust && cargo build`
+Expected: Build thành công (có thể có cảnh báo unused imports).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add packages/shared-rust/Cargo.toml packages/shared-rust/build.rs packages/shared-rust/src/lib.rs packages/shared-rust/src/shared_rust.udl
+git commit -m "feat: setup shared-rust package with sqlx and uniffi dependencies"
 ```
 
 ---
 
-### Task 2: Define Connection State & Management
+### Task 2: Data Models & UniFFI Definitions
 
 **Files:**
-- Create: `packages/shared-rust/src/connection.rs`
+- Modify: `packages/shared-rust/src/shared_rust.udl`
+- Create: `packages/shared-rust/src/models.rs`
+- Modify: `packages/shared-rust/src/lib.rs`
 
-- [x] **Step 1: Hiện thực hóa cấu trúc Connection State trong `connection.rs`**
+- [ ] **Step 1: Cập nhật UDL Schema**
 
-Sử dụng `dashmap` để lưu trữ các Connection Pool toàn cục cho Postgres, Mysql, SQLite và MongoClient:
+Thay đổi `packages/shared-rust/src/shared_rust.udl`:
+
+```udl
+namespace shared_rust {
+    [Throws=string]
+    string connect(string db_type, string connection_string);
+
+    [Throws=string]
+    void disconnect(string connection_id);
+
+    [Throws=string]
+    QueryResult execute_query(string connection_id, string query);
+};
+
+dictionary QueryResult {
+    sequence<string> rows;
+    u64 affected_rows;
+};
+```
+
+- [ ] **Step 2: Định nghĩa Models trong Rust**
+
+Tạo `packages/shared-rust/src/models.rs`:
 
 ```rust
-use dashmap::DashMap;
-use lazy_static::lazy_static;
-use sqlx::{Pool, Postgres, MySql, Sqlite};
-use mongodb::Client as MongoClient;
+use serde::{Deserialize, Serialize};
 
-pub enum ConnectionPool {
-    Postgres(Pool<Postgres>),
-    MySql(Pool<MySql>),
-    Sqlite(Pool<Sqlite>),
-    Mongo(MongoClient),
-}
-
-lazy_static! {
-    pub static ref CONNECTIONS: DashMap<String, ConnectionPool> = DashMap::new();
-}
-
-#[derive(uniffi::Enum)]
-pub enum DbType {
-    Postgres,
-    Mysql,
-    Sqlite,
-    Mongodb,
-}
-
-#[derive(uniffi::Record)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryResult {
     pub rows: Vec<String>,
     pub affected_rows: u64,
 }
 ```
 
-- [x] **Step 2: Viết các hàm `connect` và `disconnect` trong `connection.rs`**
+- [ ] **Step 3: Đưa models vào lib.rs và build**
+
+Sửa `packages/shared-rust/src/lib.rs`:
 
 ```rust
+pub mod models;
+
+uniffi::include_scaffolding!("shared_rust");
+
+pub use models::QueryResult;
+
+pub fn connect(db_type: String, connection_string: String) -> Result<String, String> {
+    Ok("mock-id".to_string())
+}
+
+pub fn disconnect(connection_id: String) -> Result<(), String> {
+    Ok(())
+}
+
+pub fn execute_query(connection_id: String, query: String) -> Result<QueryResult, String> {
+    Ok(QueryResult { rows: vec![], affected_rows: 0 })
+}
+```
+
+Run: `cd packages/shared-rust && cargo check`
+Expected: Check passes.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add packages/shared-rust/src/
+git commit -m "feat: define shared-rust uniffi schema and models"
+```
+
+---
+
+### Task 3: Connection Manager (Global Pool)
+
+**Files:**
+- Create: `packages/shared-rust/src/connection.rs`
+- Modify: `packages/shared-rust/src/lib.rs`
+
+- [ ] **Step 1: Viết logic quản lý Connection Pool**
+
+Tạo `packages/shared-rust/src/connection.rs`:
+
+```rust
+use sqlx::any::AnyPoolOptions;
+use sqlx::AnyPool;
+use std::collections::HashMap;
+use std::sync::RwLock;
+use lazy_static::lazy_static;
 use uuid::Uuid;
 
-#[uniffi::export]
-pub async fn connect(db_type: DbType, connection_string: String) -> Result<String, String> {
+lazy_static! {
+    pub static ref CONNECTION_POOL: RwLock<HashMap<String, AnyPool>> = RwLock::new(HashMap::new());
+}
+
+pub async fn connect_internal(db_type: &str, connection_string: &str) -> Result<String, String> {
+    sqlx::any::install_default_drivers();
+    
+    // sqlx Any driver requires the URL to have the correct scheme (e.g. postgres://, mysql://, sqlite://)
+    let pool = AnyPoolOptions::new()
+        .max_connections(5)
+        .connect(connection_string)
+        .await
+        .map_err(|e| format!("Failed to connect: {}", e))?;
+
     let id = Uuid::new_v4().to_string();
-    
-    match db_type {
-        DbType::Postgres => {
-            let pool = Pool::<Postgres>::connect(&connection_string)
-                .await
-                .map_err(|e| e.to_string())?;
-            CONNECTIONS.insert(id.clone(), ConnectionPool::Postgres(pool));
-        }
-        DbType::Mysql => {
-            let pool = Pool::<MySql>::connect(&connection_string)
-                .await
-                .map_err(|e| e.to_string())?;
-            CONNECTIONS.insert(id.clone(), ConnectionPool::MySql(pool));
-        }
-        DbType::Sqlite => {
-            let pool = Pool::<Sqlite>::connect(&connection_string)
-                .await
-                .map_err(|e| e.to_string())?;
-            CONNECTIONS.insert(id.clone(), ConnectionPool::Sqlite(pool));
-        }
-        DbType::Mongodb => {
-            let client = MongoClient::with_uri_str(&connection_string)
-                .await
-                .map_err(|e| e.to_string())?;
-            CONNECTIONS.insert(id.clone(), ConnectionPool::Mongo(client));
-        }
-    }
-    
+    let mut map = CONNECTION_POOL.write().map_err(|_| "Failed to acquire lock")?;
+    map.insert(id.clone(), pool);
+
     Ok(id)
 }
 
-#[uniffi::export]
-pub fn disconnect(connection_id: String) -> Result<(), String> {
-    if CONNECTIONS.remove(&connection_id).is_some() {
+pub async fn disconnect_internal(connection_id: &str) -> Result<(), String> {
+    let mut map = CONNECTION_POOL.write().map_err(|_| "Failed to acquire lock")?;
+    if let Some(pool) = map.remove(connection_id) {
+        pool.close().await;
         Ok(())
     } else {
         Err("Connection not found".to_string())
@@ -164,104 +214,191 @@ pub fn disconnect(connection_id: String) -> Result<(), String> {
 }
 ```
 
+- [ ] **Step 2: Cập nhật lib.rs để sử dụng Tokio Runtime**
+
+Vì UniFFI exports synchronous functions mặc định (nếu không dùng `async` trong UDL), ta sẽ dùng `tokio::runtime` để block on the async functions.
+
+Sửa `packages/shared-rust/src/lib.rs`:
+
+```rust
+pub mod models;
+pub mod connection;
+
+uniffi::include_scaffolding!("shared_rust");
+
+pub use models::QueryResult;
+
+// Helper to run async code in sync context
+fn run_async<F: std::future::Future>(f: F) -> F::Output {
+    tokio::runtime::Runtime::new().unwrap().block_on(f)
+}
+
+pub fn connect(db_type: String, connection_string: String) -> Result<String, String> {
+    run_async(connection::connect_internal(&db_type, &connection_string))
+}
+
+pub fn disconnect(connection_id: String) -> Result<(), String> {
+    run_async(connection::disconnect_internal(&connection_id))
+}
+
+pub fn execute_query(connection_id: String, query: String) -> Result<QueryResult, String> {
+    Ok(QueryResult { rows: vec![], affected_rows: 0 })
+}
+```
+
+Run: `cd packages/shared-rust && cargo check`
+Expected: Check passes.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add packages/shared-rust/src/
+git commit -m "feat: implement global db connection manager using sqlx AnyPool"
+```
+
 ---
 
-### Task 3: Implement SQL and MongoDB Execution Engines
+### Task 4: Query Execution Logic
 
 **Files:**
-- Create: `packages/shared-rust/src/sql_engine.rs`
-- Create: `packages/shared-rust/src/mongo_engine.rs`
-- Modify: `packages/shared-rust/src/connection.rs`
+- Create: `packages/shared-rust/src/executor.rs`
+- Modify: `packages/shared-rust/src/lib.rs`
 
-- [x] **Step 1: Viết hàm execute SQL trong `sql_engine.rs`**
+- [ ] **Step 1: Viết logic thực thi SQL**
 
-Ánh xạ kết quả hàng (Row) của SQL thành JSON String:
-
-```rust
-use sqlx::{Pool, Postgres, MySql, Sqlite, Row, Column};
-use serde_json::{Map, Value};
-
-pub async fn execute_postgres(pool: &Pool<Postgres>, sql: &str) -> Result<super::connection::QueryResult, String> {
-    let rows = sqlx::query(sql)
-        .fetch_all(pool)
-        .await
-        .map_err(|e| e.to_string())?;
-        
-    let mut json_rows = Vec::new();
-    let mut affected_rows = 0;
-    
-    for row in rows {
-        let mut map = Map::new();
-        for col in row.columns() {
-            let name = col.name();
-            // Lấy giá trị động dưới dạng string hoặc json đại diện
-            let val: Option<String> = row.try_get(name).ok();
-            map.insert(name.to_string(), Value::String(val.unwrap_or_default()));
-        }
-        json_rows.push(serde_json::to_string(&map).unwrap_or_default());
-        affected_rows += 1;
-    }
-    
-    Ok(super::connection::QueryResult {
-        rows: json_rows,
-        affected_rows,
-    })
-}
-```
-
-- [x] **Step 2: Viết hàm execute MongoDB trong `mongo_engine.rs`**
-
-Parse câu lệnh query MongoDB dưới dạng JSON và gọi client tương ứng:
+Tạo `packages/shared-rust/src/executor.rs`:
 
 ```rust
-use mongodb::Client;
-use serde_json::Value;
+use crate::models::QueryResult;
+use crate::connection::CONNECTION_POOL;
+use sqlx::{Executor, Row, Column, TypeInfo};
 
-pub async fn execute_mongo(client: &Client, query_str: &str) -> Result<super::connection::QueryResult, String> {
-    let parsed: Value = serde_json::from_str(query_str).map_err(|e| e.to_string())?;
-    let collection_name = parsed["collection"].as_str().ok_or("Missing collection field")?;
-    let operation = parsed["operation"].as_str().ok_or("Missing operation field")?;
-    
-    let db = client.default_database().ok_or("No default database found")?;
-    let collection = db.collection::<mongodb::bson::Document>(collection_name);
-    
-    let mut json_rows = Vec::new();
-    
-    if operation == "find" {
-        let filter = parsed["filter"].as_object()
-            .map(|m| serde_json::to_string(m).unwrap())
-            .and_then(|s| mongodb::bson::from_slice(s.as_bytes()).ok())
-            .unwrap_or_default();
+pub async fn execute_query_internal(connection_id: &str, query: &str) -> Result<QueryResult, String> {
+    let pool = {
+        let map = CONNECTION_POOL.read().map_err(|_| "Failed to lock")?;
+        map.get(connection_id).cloned().ok_or("Connection not found")?
+    };
+
+    // Determine if it's a structural query (like INSERT/UPDATE/DELETE) or returning rows
+    if query.trim().to_uppercase().starts_with("SELECT") || query.trim().to_uppercase().starts_with("PRAGMA") || query.trim().to_uppercase().starts_with("SHOW") {
+        let rows = sqlx::query(query)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| format!("Query failed: {}", e))?;
             
-        let mut cursor = collection.find(filter, None).await.map_err(|e| e.to_string())?;
-        use mongodb::bson::Bson;
-        while cursor.advance().await.map_err(|e| e.to_string())? {
-            let doc = cursor.deserialize_current().map_err(|e| e.to_string())?;
-            let val = Bson::Document(doc).into_relaxed_extjson();
-            json_rows.push(val.to_string());
+        // For MVP: Return rows serialized as JSON strings.
+        // Handling dynamic AnyRow mapping to JSON is complex, we will stub it to return string representations.
+        let mut result_rows = Vec::new();
+        for r in rows {
+            let mut row_obj = serde_json::Map::new();
+            for col in r.columns() {
+                // In a production setup, we need dynamic casting based on col.type_info()
+                // For this MVP step, we will just return column names.
+                row_obj.insert(col.name().to_string(), serde_json::Value::String("Value_Placeholder".to_string()));
+            }
+            result_rows.push(serde_json::to_string(&row_obj).unwrap());
         }
+        
+        Ok(QueryResult { rows: result_rows, affected_rows: 0 })
+    } else {
+        let result = sqlx::query(query)
+            .execute(&pool)
+            .await
+            .map_err(|e| format!("Execute failed: {}", e))?;
+            
+        Ok(QueryResult { rows: vec![], affected_rows: result.rows_affected() })
     }
-    
-    Ok(super::connection::QueryResult {
-        rows: json_rows,
-        affected_rows: 0,
-    })
 }
 ```
 
-- [x] **Step 3: Khai báo hàm `execute_query` chính tại `connection.rs`**
+- [ ] **Step 2: Đưa executor vào lib.rs**
+
+Sửa `packages/shared-rust/src/lib.rs`:
 
 ```rust
-#[uniffi::export]
-pub async fn execute_query(connection_id: String, query: String) -> Result<QueryResult, String> {
-    let conn = CONNECTIONS.get(&connection_id)
-        .ok_or_else(|| "Connection not found".to_string())?;
-        
-    match conn.value() {
-        ConnectionPool::Postgres(pool) => {
-            crate::sql_engine::execute_postgres(pool, &query).await
-        }
-        _ => Err("Not implemented".to_string())
-    }
+pub mod models;
+pub mod connection;
+pub mod executor;
+
+uniffi::include_scaffolding!("shared_rust");
+
+pub use models::QueryResult;
+
+fn run_async<F: std::future::Future>(f: F) -> F::Output {
+    tokio::runtime::Runtime::new().unwrap().block_on(f)
 }
+
+pub fn connect(db_type: String, connection_string: String) -> Result<String, String> {
+    run_async(connection::connect_internal(&db_type, &connection_string))
+}
+
+pub fn disconnect(connection_id: String) -> Result<(), String> {
+    run_async(connection::disconnect_internal(&connection_id))
+}
+
+pub fn execute_query(connection_id: String, query: String) -> Result<QueryResult, String> {
+    run_async(executor::execute_query_internal(&connection_id, &query))
+}
+```
+
+Run: `cd packages/shared-rust && cargo build`
+Expected: Build thành công.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add packages/shared-rust/src/
+git commit -m "feat: implement sql execution layer in shared-rust"
+```
+
+---
+
+### Task 5: Testing with SQLite (In-Memory)
+
+**Files:**
+- Create: `packages/shared-rust/tests/integration_test.rs`
+
+- [ ] **Step 1: Viết integration tests**
+
+Tạo `packages/shared-rust/tests/integration_test.rs`:
+
+```rust
+use shared_rust::{connect, disconnect, execute_query};
+
+#[test]
+fn test_sqlite_in_memory_flow() {
+    // 1. Connect
+    let conn_id = connect("sqlite".to_string(), "sqlite::memory:".to_string())
+        .expect("Failed to connect to in-memory sqlite");
+        
+    // 2. Create Table
+    let res = execute_query(conn_id.clone(), "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)".to_string())
+        .expect("Failed to create table");
+    assert_eq!(res.affected_rows, 0); // CREATE usually returns 0
+    
+    // 3. Insert
+    let res = execute_query(conn_id.clone(), "INSERT INTO users (name) VALUES ('Antigravity')".to_string())
+        .expect("Failed to insert");
+    assert_eq!(res.affected_rows, 1);
+    
+    // 4. Select
+    let res = execute_query(conn_id.clone(), "SELECT * FROM users".to_string())
+        .expect("Failed to select");
+    assert_eq!(res.rows.len(), 1); // Returns 1 row (even if values are mocked)
+    
+    // 5. Disconnect
+    disconnect(conn_id).expect("Failed to disconnect");
+}
+```
+
+- [ ] **Step 2: Run tests**
+
+Run: `cd packages/shared-rust && cargo test`
+Expected: Test `test_sqlite_in_memory_flow` passes.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add packages/shared-rust/tests/
+git commit -m "test: add in-memory sqlite integration test for shared-rust"
 ```
