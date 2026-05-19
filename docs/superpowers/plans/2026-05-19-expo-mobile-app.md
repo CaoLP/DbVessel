@@ -212,7 +212,7 @@ git commit -m "feat: implement MobileDataGrid and MobileEditor components"
 **Files:**
 - Modify: `apps/mobile/app/index.tsx`
 
-- [ ] **Step 1: Sửa trang chủ App Mobile**
+- [x] **Step 1: Sửa trang chủ App Mobile**
 
 Thay thế nội dung `apps/mobile/app/index.tsx`:
 
@@ -306,7 +306,7 @@ export default function App() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/index.tsx

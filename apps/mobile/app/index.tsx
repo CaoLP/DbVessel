@@ -1,38 +1,87 @@
-import React from 'react';
-import { Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useConnectionStore } from '@db-client/core';
-import { Stack, useRouter } from 'expo-router';
+import { MobileEditor } from '../src/components/MobileEditor';
+import { MobileDataGrid } from '../src/components/MobileDataGrid';
+import { connect, executeQuery } from 'db-native';
 
-export default function ConnectionListScreen() {
+export default function App() {
   const { connections } = useConnectionStore();
-  const router = useRouter();
+  const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null);
+  const [dbSessionId, setDbSessionId] = useState<string | null>(null);
+  
+  const [queryResult, setQueryResult] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSelectConnection = async (connId: string) => {
+    const conn = connections.find(c => c.id === connId);
+    if (!conn) return;
+    
+    setIsLoading(true);
+    setError(null);
+    try {
+      let connectionString = conn.type === 'sqlite' 
+        ? `sqlite://${conn.name}.db?mode=rwc` 
+        : `${conn.type}://${conn.user}@${conn.host}:${conn.port}`;
+      
+      const sessionId = await connect(conn.type, connectionString);
+      setDbSessionId(sessionId);
+      setActiveConnectionId(connId);
+      setQueryResult([]);
+    } catch (err: any) {
+      setError(err.message || String(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExecuteQuery = async (query: string) => {
+    if (!dbSessionId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await executeQuery(dbSessionId, query);
+      const parsedRows = result.rows.map(r => JSON.parse(r));
+      setQueryResult(parsedRows);
+    } catch (err: any) {
+      setError(err.message || String(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <View className="flex-1 bg-[#030014] p-4">
-      <Stack.Screen 
-        options={{ 
-          title: 'Kết nối',
-        }} 
-      />
-      <ScrollView className="flex-1">
-        {connections.length === 0 ? (
-          <View className="flex-1 items-center justify-center py-20">
-            <Text className="text-gray-500 text-sm">Chưa có kết nối nào được tạo.</Text>
-            <Text className="text-gray-600 text-xs mt-1">Vui lòng khởi tạo kết nối trên Desktop.</Text>
+    <SafeAreaView className="flex-1 bg-black">
+      <View className="flex-1 p-4">
+        {!activeConnectionId ? (
+          <View className="flex-1 justify-center items-center">
+            <Text className="text-white text-lg font-bold mb-6">Select Connection</Text>
+            {connections.map(c => (
+              <TouchableOpacity
+                key={c.id}
+                onPress={() => handleSelectConnection(c.id)}
+                className="bg-indigo-600 px-6 py-3 rounded-xl mb-4 w-full"
+              >
+                <Text className="text-white text-center font-bold text-base">{c.name}</Text>
+              </TouchableOpacity>
+            ))}
+            {isLoading && <ActivityIndicator color="#6366f1" style={{ marginTop: 20 }} />}
+            {error && <Text className="text-red-400 mt-4">{error}</Text>}
           </View>
         ) : (
-          connections.map((conn) => (
-            <TouchableOpacity 
-              key={conn.id} 
-              onPress={() => router.push(`/connection/${conn.id}`)}
-              className="bg-white/5 border border-white/10 rounded-xl p-4 mb-3 active:bg-white/10"
-            >
-              <Text className="text-white text-base font-bold">{conn.name}</Text>
-              <Text className="text-gray-400 text-xs mt-1">{conn.type.toUpperCase()} • {conn.host}:{conn.port}</Text>
-            </TouchableOpacity>
-          ))
+          <View className="flex-1">
+            <View className="h-1/3 mb-4">
+              <MobileEditor onExecute={handleExecuteQuery} isLoading={isLoading} />
+            </View>
+            <View className="flex-1 bg-gray-900 rounded-xl overflow-hidden border border-gray-800">
+              {error && <Text className="text-red-400 p-4">{error}</Text>}
+              <MobileDataGrid rowData={queryResult} />
+            </View>
+          </View>
         )}
-      </ScrollView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
