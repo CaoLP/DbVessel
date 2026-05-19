@@ -92,7 +92,7 @@ git commit -m "feat: setup shared-rust package with sqlx and uniffi dependencies
 - Create: `packages/shared-rust/src/models.rs`
 - Modify: `packages/shared-rust/src/lib.rs`
 
-- [ ] **Step 1: Cập nhật UDL Schema**
+- [x] **Step 1: Cập nhật UDL Schema**
 
 Thay đổi `packages/shared-rust/src/shared_rust.udl`:
 
@@ -114,7 +114,7 @@ dictionary QueryResult {
 };
 ```
 
-- [ ] **Step 2: Định nghĩa Models trong Rust**
+- [x] **Step 2: Định nghĩa Models trong Rust**
 
 Tạo `packages/shared-rust/src/models.rs`:
 
@@ -128,7 +128,7 @@ pub struct QueryResult {
 }
 ```
 
-- [ ] **Step 3: Đưa models vào lib.rs và build**
+- [x] **Step 3: Đưa models vào lib.rs và build**
 
 Sửa `packages/shared-rust/src/lib.rs`:
 
@@ -155,7 +155,7 @@ pub fn execute_query(connection_id: String, query: String) -> Result<QueryResult
 Run: `cd packages/shared-rust && cargo check`
 Expected: Check passes.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/shared-rust/src/

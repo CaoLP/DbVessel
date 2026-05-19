@@ -1,3 +1,20 @@
 namespace shared_rust {
-    string hello_world();
+    [Throws=DbError]
+    string connect(string db_type, string connection_string);
+
+    [Throws=DbError]
+    void disconnect(string connection_id);
+
+    [Throws=DbError]
+    QueryResult execute_query(string connection_id, string query);
+};
+
+[Error]
+enum DbError {
+    "Generic",
+};
+
+dictionary QueryResult {
+    sequence<string> rows;
+    u64 affected_rows;
 };
