@@ -18,7 +18,7 @@
 - Create: `apps/desktop/src-tauri/src/main.rs`
 - Modify: `apps/desktop/package.json`
 
-- [ ] **Step 1: Khởi tạo Cargo.toml cho Tauri**
+- [x] **Step 1: Khởi tạo Cargo.toml cho Tauri**
 
 Tạo `apps/desktop/src-tauri/Cargo.toml`:
 
@@ -40,7 +40,7 @@ serde_json = "1.0"
 shared-rust = { path = "../../../packages/shared-rust" }
 ```
 
-- [ ] **Step 2: Cấu hình tauri.conf.json**
+- [x] **Step 2: Cấu hình tauri.conf.json**
 
 Tạo `apps/desktop/src-tauri/tauri.conf.json`:
 
@@ -75,7 +75,7 @@ Tạo `apps/desktop/src-tauri/tauri.conf.json`:
 }
 ```
 
-- [ ] **Step 3: Tạo mã nguồn khởi chạy Tauri**
+- [x] **Step 3: Tạo mã nguồn khởi chạy Tauri**
 
 Tạo `apps/desktop/src-tauri/src/main.rs`:
 
@@ -93,7 +93,7 @@ fn main() {
 }
 ```
 
-- [ ] **Step 4: Cập nhật package.json của Desktop**
+- [x] **Step 4: Cập nhật package.json của Desktop**
 
 Sửa `apps/desktop/package.json` để thêm Tauri CLI và scripts:
 
@@ -108,7 +108,7 @@ Sửa `scripts` trong `apps/desktop/package.json` để thêm `tauri`:
   }
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/desktop/src-tauri apps/desktop/package.json apps/desktop/package-lock.json
