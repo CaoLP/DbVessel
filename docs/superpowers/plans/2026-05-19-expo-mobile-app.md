@@ -17,7 +17,7 @@
 - Create: `apps/mobile/modules/db-native/index.ts`
 - Modify: `apps/mobile/package.json`
 
-- [ ] **Step 1: Khởi tạo thư mục và package.json cho module**
+- [x] **Step 1: Khởi tạo thư mục và package.json cho module**
 
 Tạo `apps/mobile/modules/db-native/package.json`:
 
@@ -34,7 +34,7 @@ Tạo `apps/mobile/modules/db-native/package.json`:
 }
 ```
 
-- [ ] **Step 2: Tạo file index.ts của module**
+- [x] **Step 2: Tạo file index.ts của module**
 
 Tạo `apps/mobile/modules/db-native/index.ts`:
 
@@ -55,7 +55,7 @@ export async function executeQuery(connectionId: string, query: string): Promise
 }
 ```
 
-- [ ] **Step 3: Cập nhật package.json của Mobile App**
+- [x] **Step 3: Cập nhật package.json của Mobile App**
 
 Thêm `db-native` vào `dependencies` trong `apps/mobile/package.json`:
 
@@ -65,12 +65,12 @@ Thêm `db-native` vào `dependencies` trong `apps/mobile/package.json`:
     ...
 ```
 
-- [ ] **Step 4: Cài đặt dependencies**
+- [x] **Step 4: Cài đặt dependencies**
 
 Chạy lệnh: `cd apps/mobile && npm install`
 Expected: Cài đặt thành công module cục bộ.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/modules apps/mobile/package.json apps/mobile/package-lock.json
