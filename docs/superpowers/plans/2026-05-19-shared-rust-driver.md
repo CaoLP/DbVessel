@@ -358,7 +358,7 @@ git commit -m "feat: implement sql execution layer in shared-rust"
 **Files:**
 - Create: `packages/shared-rust/tests/integration_test.rs`
 
-- [ ] **Step 1: Viết integration tests**
+- [x] **Step 1: Viết integration tests**
 
 Tạo `packages/shared-rust/tests/integration_test.rs`:
 
@@ -391,12 +391,12 @@ fn test_sqlite_in_memory_flow() {
 }
 ```
 
-- [ ] **Step 2: Run tests**
+- [x] **Step 2: Run tests**
 
 Run: `cd packages/shared-rust && cargo test`
 Expected: Test `test_sqlite_in_memory_flow` passes.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add packages/shared-rust/tests/
