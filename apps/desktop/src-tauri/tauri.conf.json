@@ -20,9 +20,5 @@
       "csp": null
     }
   },
-  "bundle": {
-    "active": true,
-    "identifier": "com.dbvessel.desktop",
-    "targets": "all"
-  }
+  "identifier": "com.dbvessel.desktop"
 }

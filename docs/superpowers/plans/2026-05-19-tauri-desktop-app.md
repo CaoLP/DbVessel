@@ -122,7 +122,7 @@ git commit -m "feat: initialize tauri configuration for desktop app"
 **Files:**
 - Modify: `apps/desktop/src-tauri/src/main.rs`
 
-- [ ] **Step 1: Đăng ký các Tauri Commands gọi shared-rust**
+- [x] **Step 1: Đăng ký các Tauri Commands gọi shared-rust**
 
 Sửa `apps/desktop/src-tauri/src/main.rs`:
 
@@ -164,12 +164,12 @@ fn main() {
 }
 ```
 
-- [ ] **Step 2: Build kiểm tra**
+- [x] **Step 2: Build kiểm tra**
 
 Chạy: `cd apps/desktop/src-tauri && cargo check`
 Expected: Check passes (Tauri context generated successfully).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/desktop/src-tauri/src/main.rs
