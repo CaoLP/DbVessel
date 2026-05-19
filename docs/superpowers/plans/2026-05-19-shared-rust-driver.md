@@ -33,7 +33,7 @@ packages/shared-rust/
 - Create: `packages/shared-rust/Cargo.toml`
 - Create: `packages/shared-rust/src/lib.rs`
 
-- [ ] **Step 1: Tạo file cấu hình `packages/shared-rust/Cargo.toml`**
+- [x] **Step 1: Tạo file cấu hình `packages/shared-rust/Cargo.toml`**
 
 Tạo file `Cargo.toml` khai báo các dependencies cần thiết cho kết nối cơ sở dữ liệu và UniFFI:
 
@@ -60,7 +60,7 @@ lazy_static = "1.4"
 uniffi = { version = "0.25", features = ["build"] }
 ```
 
-- [ ] **Step 2: Tạo file `packages/shared-rust/src/lib.rs` cơ bản**
+- [x] **Step 2: Tạo file `packages/shared-rust/src/lib.rs` cơ bản**
 
 Khai báo module cấu trúc:
 
@@ -79,7 +79,7 @@ uniffi::setup_scaffolding!();
 **Files:**
 - Create: `packages/shared-rust/src/connection.rs`
 
-- [ ] **Step 1: Hiện thực hóa cấu trúc Connection State trong `connection.rs`**
+- [x] **Step 1: Hiện thực hóa cấu trúc Connection State trong `connection.rs`**
 
 Sử dụng `dashmap` để lưu trữ các Connection Pool toàn cục cho Postgres, Mysql, SQLite và MongoClient:
 
@@ -115,7 +115,7 @@ pub struct QueryResult {
 }
 ```
 
-- [ ] **Step 2: Viết các hàm `connect` và `disconnect` trong `connection.rs`**
+- [x] **Step 2: Viết các hàm `connect` và `disconnect` trong `connection.rs`**
 
 ```rust
 use uuid::Uuid;
@@ -173,7 +173,7 @@ pub fn disconnect(connection_id: String) -> Result<(), String> {
 - Create: `packages/shared-rust/src/mongo_engine.rs`
 - Modify: `packages/shared-rust/src/connection.rs`
 
-- [ ] **Step 1: Viết hàm execute SQL trong `sql_engine.rs`**
+- [x] **Step 1: Viết hàm execute SQL trong `sql_engine.rs`**
 
 Ánh xạ kết quả hàng (Row) của SQL thành JSON String:
 
@@ -209,7 +209,7 @@ pub async fn execute_postgres(pool: &Pool<Postgres>, sql: &str) -> Result<super:
 }
 ```
 
-- [ ] **Step 2: Viết hàm execute MongoDB trong `mongo_engine.rs`**
+- [x] **Step 2: Viết hàm execute MongoDB trong `mongo_engine.rs`**
 
 Parse câu lệnh query MongoDB dưới dạng JSON và gọi client tương ứng:
 
@@ -249,7 +249,7 @@ pub async fn execute_mongo(client: &Client, query_str: &str) -> Result<super::co
 }
 ```
 
-- [ ] **Step 3: Khai báo hàm `execute_query` chính tại `connection.rs`**
+- [x] **Step 3: Khai báo hàm `execute_query` chính tại `connection.rs`**
 
 ```rust
 #[uniffi::export]
