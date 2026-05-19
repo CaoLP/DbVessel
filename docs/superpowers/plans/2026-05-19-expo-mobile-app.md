@@ -84,7 +84,7 @@ git commit -m "feat: init expo local module db-native"
 **Files:**
 - Modify: `apps/mobile/package.json`
 
-- [ ] **Step 1: Cài đặt thư viện UI**
+- [x] **Step 1: Cài đặt thư viện UI**
 
 Chạy lệnh từ thư mục `apps/mobile`:
 ```bash
@@ -94,7 +94,7 @@ npm install @shopify/flash-list @uiw/react-codemirror @codemirror/lang-sql icons
 
 *(Lưu ý: `@uiw/react-codemirror` chủ yếu cho web, nhưng trong Expo nó có thể chạy trên web hoặc cần native wrapper. Để đơn giản cho MVP, ta sẽ cài đặt và sử dụng nó cơ bản, có thể fallback sang `TextInput` nếu lỗi native).*
 
-- [ ] **Step 2: Cài đặt Zustand từ packages/core**
+- [x] **Step 2: Cài đặt Zustand từ packages/core**
 
 Đảm bảo `@db-client/core` đã được link (đã thực hiện từ trước).
 

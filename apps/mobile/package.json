@@ -10,17 +10,21 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "db-native": "./modules/db-native",
+    "@codemirror/lang-sql": "^6.10.0",
     "@db-client/core": "*",
+    "@shopify/flash-list": "^2.3.1",
+    "@uiw/react-codemirror": "^4.25.9",
+    "db-native": "./modules/db-native",
     "expo": "~50.0.14",
     "expo-router": "~3.4.8",
     "expo-status-bar": "~1.11.1",
+    "iconsax-react-native": "^0.0.8",
+    "nativewind": "^2.0.11",
     "react": "18.2.0",
     "react-native": "0.73.6",
     "react-native-safe-area-context": "4.8.2",
     "react-native-screens": "~3.29.0",
-    "react-native-svg": "14.1.0",
-    "nativewind": "^2.0.11"
+    "react-native-svg": "14.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
