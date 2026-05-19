@@ -320,7 +320,7 @@ git commit -m "feat: implement EditorPanel with monaco and DataGrid with ag-grid
 **Files:**
 - Modify: `apps/desktop/src/App.tsx`
 
-- [ ] **Step 1: Sửa App.tsx để thực thi lệnh qua Tauri**
+- [x] **Step 1: Sửa App.tsx để thực thi lệnh qua Tauri**
 
 Thay thế nội dung `apps/desktop/src/App.tsx`:
 
@@ -454,7 +454,7 @@ function App() {
 export default App;
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/desktop/src/App.tsx
