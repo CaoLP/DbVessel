@@ -113,7 +113,7 @@ git commit -m "chore: install flash-list and codemirror for mobile ui"
 - Create: `apps/mobile/src/components/MobileDataGrid.tsx`
 - Create: `apps/mobile/src/components/MobileEditor.tsx`
 
-- [ ] **Step 1: Tạo MobileDataGrid Component**
+- [x] **Step 1: Tạo MobileDataGrid Component**
 
 Tạo `apps/mobile/src/components/MobileDataGrid.tsx`:
 
@@ -154,7 +154,7 @@ export const MobileDataGrid: React.FC<MobileDataGridProps> = ({ rowData }) => {
 };
 ```
 
-- [ ] **Step 2: Tạo MobileEditor Component**
+- [x] **Step 2: Tạo MobileEditor Component**
 
 Tạo `apps/mobile/src/components/MobileEditor.tsx`:
 
