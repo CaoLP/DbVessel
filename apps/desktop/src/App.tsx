@@ -38,7 +38,8 @@ function App() {
         // SQLite: create a local file next to app
         connectionString = `sqlite://${conn.name}.db?mode=rwc`;
       } else {
-        connectionString = `${conn.type}://${conn.user}@${conn.host}:${conn.port}/${conn.database || ''}`;
+        const auth = conn.password ? `${conn.user}:${conn.password}` : conn.user;
+        connectionString = `${conn.type}://${auth}@${conn.host}:${conn.port}/${conn.database || ''}`;
       }
 
       const sessionId = await tauriInvoke<string>('db_connect', {
