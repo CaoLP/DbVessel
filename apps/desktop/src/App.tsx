@@ -1,16 +1,24 @@
 import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { Sidebar } from './components/Sidebar';
 import { ConnectionModal } from './components/ConnectionModal';
 import { EditorPanel } from './components/EditorPanel';
 import { DataGrid } from './components/DataGrid';
-import { useConnectionStore } from '@db-client/core';
+import { useConnectionStore, ConnectionProfile } from '@db-client/core';
+
+// Safe Tauri invoke wrapper — works in Tauri shell and falls back in browser
+async function tauriInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  // @ts-ignore
+  if (window.__TAURI__) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    return invoke<T>(cmd, args);
+  }
+  throw new Error('Tauri is not available. Please run with `npm run tauri dev`.');
+}
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null);
+  const [activeConnection, setActiveConnection] = useState<ConnectionProfile | null>(null);
   const [dbSessionId, setDbSessionId] = useState<string | null>(null);
-  
   const [queryResult, setQueryResult] = useState<any[]>([]);
   const [affectedRows, setAffectedRows] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -18,31 +26,30 @@ function App() {
 
   const { connections } = useConnectionStore();
 
-  const handleSelectConnection = async (connId: string) => {
-    const conn = connections.find(c => c.id === connId);
-    if (!conn) return;
-    
+  const handleSelectConnection = async (conn: ConnectionProfile) => {
     setIsLoading(true);
     setError(null);
+    setQueryResult([]);
+    setAffectedRows(null);
+
     try {
-      // Build dummy connection string for SQLite for MVP, or full for Postgres
       let connectionString = '';
       if (conn.type === 'sqlite') {
+        // SQLite: create a local file next to app
         connectionString = `sqlite://${conn.name}.db?mode=rwc`;
       } else {
-        connectionString = `${conn.type}://${conn.user}@${conn.host}:${conn.port}`;
+        connectionString = `${conn.type}://${conn.user}@${conn.host}:${conn.port}/${conn.database || ''}`;
       }
-      
-      const sessionId: string = await invoke('db_connect', { 
-        dbType: conn.type, 
-        connectionString 
+
+      const sessionId = await tauriInvoke<string>('db_connect', {
+        dbType: conn.type,
+        connectionString,
       });
+
       setDbSessionId(sessionId);
-      setActiveConnectionId(connId);
-      setQueryResult([]);
-      setAffectedRows(null);
+      setActiveConnection(conn);
     } catch (err: any) {
-      setError(err);
+      setError(String(err));
     } finally {
       setIsLoading(false);
     }
@@ -50,65 +57,98 @@ function App() {
 
   const handleExecuteQuery = async (query: string) => {
     if (!dbSessionId) {
-      setError('Please select a connection first.');
+      setError('Chọn một kết nối trước khi chạy truy vấn.');
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
+
     try {
-      const result: { rows: string[], affected_rows: number } = await invoke('db_execute_query', {
+      const result = await tauriInvoke<{ rows: string[]; affected_rows: number }>('db_execute_query', {
         connectionId: dbSessionId,
-        query
+        query,
       });
-      
-      // Parse JSON rows
-      const parsedRows = result.rows.map(r => JSON.parse(r));
+
+      const parsedRows = result.rows.map((r) => JSON.parse(r));
       setQueryResult(parsedRows);
       setAffectedRows(result.affected_rows);
     } catch (err: any) {
-      setError(err);
+      setError(String(err));
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleDisconnect = async () => {
+    if (!dbSessionId) return;
+    try {
+      await tauriInvoke('db_disconnect', { connectionId: dbSessionId });
+    } catch (_) {}
+    setDbSessionId(null);
+    setActiveConnection(null);
+    setQueryResult([]);
+    setAffectedRows(null);
+    setError(null);
+  };
+
   return (
     <div className="flex h-screen w-screen bg-space-bg text-white overflow-hidden">
-      <Sidebar onOpenAddModal={() => setIsModalOpen(true)} />
-      
+      <Sidebar
+        onOpenAddModal={() => setIsModalOpen(true)}
+        onSelectConnection={handleSelectConnection}
+        activeConnectionId={activeConnection?.id ?? null}
+      />
+
       <div className="flex-1 flex flex-col h-full">
-        {!activeConnectionId ? (
-          <div className="flex-1 flex flex-col justify-center items-center">
-             <p className="text-gray-400 mb-4">Chọn hoặc thêm kết nối từ thanh bên để bắt đầu thao tác.</p>
-             <div className="flex gap-2">
-               {connections.map(c => (
-                 <button 
-                   key={c.id} 
-                   onClick={() => handleSelectConnection(c.id)}
-                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-semibold transition"
-                 >
-                   Connect to {c.name}
-                 </button>
-               ))}
-             </div>
-             {error && <p className="text-red-400 mt-4 text-sm bg-red-900/20 p-3 rounded">{error}</p>}
-             {isLoading && <p className="text-indigo-400 mt-4 text-sm">Connecting...</p>}
+        {/* Top bar */}
+        {activeConnection && (
+          <div className="flex items-center justify-between px-4 py-2 border-b border-space-border bg-[#0A0710]">
+            <span className="text-xs text-gray-400">
+              Đang kết nối: <span className="text-indigo-400 font-semibold">{activeConnection.name}</span>
+              <span className="text-gray-600 ml-2">({activeConnection.type})</span>
+            </span>
+            <button
+              onClick={handleDisconnect}
+              className="text-xs text-red-400 hover:text-red-300 transition"
+            >
+              Ngắt kết nối
+            </button>
+          </div>
+        )}
+
+        {!activeConnection ? (
+          <div className="flex-1 flex flex-col justify-center items-center gap-4">
+            <div className="text-4xl">🗄️</div>
+            <p className="text-gray-400 text-sm">
+              {connections.length === 0
+                ? 'Nhấn "+" ở thanh bên để thêm kết nối đầu tiên.'
+                : 'Chọn một kết nối từ thanh bên để bắt đầu.'}
+            </p>
+            {isLoading && <p className="text-indigo-400 text-sm animate-pulse">Đang kết nối...</p>}
+            {error && (
+              <div className="bg-red-900/20 text-red-400 px-4 py-3 rounded-lg text-sm border border-red-900/40 max-w-md text-center">
+                {error}
+              </div>
+            )}
           </div>
         ) : (
           <>
-            <div className="h-[40%] min-h-[200px]">
+            {/* SQL Editor (top 40%) */}
+            <div className="h-[40%] min-h-[160px]">
               <EditorPanel onExecute={handleExecuteQuery} isLoading={isLoading} />
             </div>
-            <div className="h-[60%] bg-[#05030A] p-2 flex flex-col">
+
+            {/* Result area (bottom 60%) */}
+            <div className="flex-1 bg-[#05030A] p-2 flex flex-col overflow-hidden">
               {error && (
-                <div className="bg-red-900/20 text-red-400 p-3 mb-2 rounded-lg text-sm border border-red-900/50">
+                <div className="bg-red-900/20 text-red-400 p-3 mb-2 rounded-lg text-sm border border-red-900/50 flex-shrink-0">
                   {error}
                 </div>
               )}
               {affectedRows !== null && queryResult.length === 0 && !error && (
-                <div className="text-green-400 p-3 text-sm">
-                  Query executed successfully. Affected rows: {affectedRows}
+                <div className="text-green-400 p-3 text-sm flex-shrink-0">
+                  ✓ Lệnh thực thi thành công. Hàng bị ảnh hưởng: {affectedRows}
                 </div>
               )}
               <div className="flex-1 rounded-xl overflow-hidden border border-space-border">
@@ -118,7 +158,7 @@ function App() {
           </>
         )}
       </div>
-      
+
       <ConnectionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );

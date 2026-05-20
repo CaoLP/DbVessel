@@ -1,12 +1,14 @@
 import React from 'react';
-import { useConnectionStore } from '@db-client/core';
+import { useConnectionStore, ConnectionProfile } from '@db-client/core';
 import { Add, Data } from 'iconsax-react';
 
 interface SidebarProps {
   onOpenAddModal: () => void;
+  onSelectConnection: (conn: ConnectionProfile) => void;
+  activeConnectionId: string | null;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal, onSelectConnection, activeConnectionId }) => {
   const { connections } = useConnectionStore();
 
   return (
@@ -28,7 +30,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
           connections.map((conn) => (
             <div 
               key={conn.id} 
-              className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer border border-transparent hover:border-space-border transition"
+              onClick={() => onSelectConnection(conn)}
+              className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer border transition ${
+                activeConnectionId === conn.id
+                  ? 'bg-indigo-600/20 border-indigo-500/50 shadow-[0_0_10px_rgba(99,102,241,0.2)]'
+                  : 'hover:bg-white/5 border-transparent hover:border-space-border'
+              }`}
             >
               <Data size={20} className="text-indigo-400" />
               <div>

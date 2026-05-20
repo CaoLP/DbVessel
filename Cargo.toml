@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "packages/shared-rust",
+    "apps/desktop/src-tauri",
+]
+resolver = "2"

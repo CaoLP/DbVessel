@@ -8,3 +8,7 @@ dist/
 .superpowers/
 .agent/
 .opencode/
+
+# Rust
+target/
+**/*/target/
