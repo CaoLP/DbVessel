@@ -36,8 +36,8 @@ pub async fn execute_query_internal(connection_id: &str, query: &str) -> Result<
             .map_err(|e| DbError::Generic { message: format!("Execute failed: {}", e) })?;
             
         Ok(QueryResult { rows: vec![], affected_rows: result.rows_affected() })
+    }
 }
-
 pub async fn get_schema_internal(connection_id: &str) -> Result<crate::models::DatabaseSchema, DbError> {
     let pool = {
         let map = CONNECTION_POOL.read().map_err(|_| DbError::Generic { message: "Failed to lock".to_string() })?;
