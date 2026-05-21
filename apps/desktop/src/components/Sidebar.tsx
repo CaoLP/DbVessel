@@ -1,14 +1,17 @@
 import React from 'react';
 import { useConnectionStore, ConnectionProfile } from '@db-client/core';
 import { Add, Data } from 'iconsax-react';
+import { DbExplorerTree, DatabaseSchema } from './DbExplorerTree';
 
 interface SidebarProps {
   onOpenAddModal: () => void;
   onSelectConnection: (conn: ConnectionProfile) => void;
   activeConnectionId: string | null;
+  schema?: DatabaseSchema | null;
+  onTableDoubleClick?: (tableName: string) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal, onSelectConnection, activeConnectionId }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal, onSelectConnection, activeConnectionId, schema, onTableDoubleClick }) => {
   const { connections } = useConnectionStore();
 
   return (
@@ -30,18 +33,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal, onSelectConnec
           connections.map((conn) => (
             <div 
               key={conn.id} 
-              onClick={() => onSelectConnection(conn)}
-              className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer border transition ${
-                activeConnectionId === conn.id
-                  ? 'bg-indigo-600/20 border-indigo-500/50 shadow-[0_0_10px_rgba(99,102,241,0.2)]'
-                  : 'hover:bg-white/5 border-transparent hover:border-space-border'
-              }`}
-            >
-              <Data size={20} className="text-indigo-400" />
-              <div>
-                <h4 className="text-sm font-semibold">{conn.name}</h4>
-                <p className="text-xs text-gray-500">{conn.type}</p>
+              <div 
+                onClick={() => onSelectConnection(conn)}
+                className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer border transition ${
+                  activeConnectionId === conn.id
+                    ? 'bg-indigo-600/20 border-indigo-500/50 shadow-[0_0_10px_rgba(99,102,241,0.2)]'
+                    : 'hover:bg-white/5 border-transparent hover:border-space-border'
+                }`}
+              >
+                <Data size={20} className="text-indigo-400" />
+                <div>
+                  <h4 className="text-sm font-semibold">{conn.name}</h4>
+                  <p className="text-xs text-gray-500">{conn.type}</p>
+                </div>
               </div>
+              
+              {/* Nested Schema Tree for Active Connection */}
+              {activeConnectionId === conn.id && schema && onTableDoubleClick && (
+                <div className="ml-2 mt-1 border-l border-space-border pl-2">
+                  <DbExplorerTree schema={schema} onTableDoubleClick={onTableDoubleClick} />
+                </div>
+              )}
             </div>
           ))
         )}

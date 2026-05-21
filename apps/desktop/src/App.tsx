@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { ConnectionModal } from './components/ConnectionModal';
 import { EditorPanel } from './components/EditorPanel';
 import { DataGrid } from './components/DataGrid';
+import { TableDesignerModal } from './components/TableDesignerModal';
 import { useConnectionStore, ConnectionProfile } from '@db-client/core';
 
 // Safe Tauri invoke wrapper — works in Tauri shell and falls back in browser
@@ -17,12 +18,14 @@ async function tauriInvoke<T>(cmd: string, args?: Record<string, unknown>): Prom
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [activeConnection, setActiveConnection] = useState<ConnectionProfile | null>(null);
   const [dbSessionId, setDbSessionId] = useState<string | null>(null);
   const [queryResult, setQueryResult] = useState<any[]>([]);
   const [affectedRows, setAffectedRows] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [schema, setSchema] = useState<any>(null);
 
   const { connections } = useConnectionStore();
 
@@ -49,6 +52,14 @@ function App() {
 
       setDbSessionId(sessionId);
       setActiveConnection(conn);
+
+      // Fetch schema
+      try {
+        const dbSchema = await tauriInvoke('db_get_schema', { connectionId: sessionId });
+        setSchema(dbSchema);
+      } catch (e) {
+        console.warn("Failed to get schema:", e);
+      }
     } catch (err: any) {
       setError(String(err));
     } finally {
@@ -88,9 +99,33 @@ function App() {
     } catch (_) {}
     setDbSessionId(null);
     setActiveConnection(null);
+    setSchema(null);
     setQueryResult([]);
     setAffectedRows(null);
     setError(null);
+  };
+
+  const handleCreateTable = async (tableName: string, columns: any[]) => {
+    if (!dbSessionId) return;
+    
+    // Generate CREATE TABLE SQL (SQLite dialect for MVP)
+    const colsSql = columns.map(col => {
+      let def = `${col.name} ${col.type}`;
+      if (col.isPrimary) def += ' PRIMARY KEY';
+      if (col.isNotNull) def += ' NOT NULL';
+      return def;
+    }).join(', ');
+    
+    const sql = `CREATE TABLE ${tableName} (${colsSql});`;
+    
+    setIsTableModalOpen(false);
+    await handleExecuteQuery(sql);
+    
+    // Refresh schema
+    try {
+      const dbSchema = await tauriInvoke('db_get_schema', { connectionId: dbSessionId });
+      setSchema(dbSchema);
+    } catch (e) {}
   };
 
   return (
@@ -99,6 +134,8 @@ function App() {
         onOpenAddModal={() => setIsModalOpen(true)}
         onSelectConnection={handleSelectConnection}
         activeConnectionId={activeConnection?.id ?? null}
+        schema={schema}
+        onTableDoubleClick={(tableName) => handleExecuteQuery(`SELECT * FROM ${tableName} LIMIT 100`)}
       />
 
       <div className="flex-1 flex flex-col h-full">
@@ -109,12 +146,20 @@ function App() {
               Đang kết nối: <span className="text-indigo-400 font-semibold">{activeConnection.name}</span>
               <span className="text-gray-600 ml-2">({activeConnection.type})</span>
             </span>
-            <button
-              onClick={handleDisconnect}
-              className="text-xs text-red-400 hover:text-red-300 transition"
-            >
-              Ngắt kết nối
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsTableModalOpen(true)}
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition"
+              >
+                + Tạo Bảng Mới
+              </button>
+              <button
+                onClick={handleDisconnect}
+                className="text-xs text-red-400 hover:text-red-300 transition border-l border-space-border pl-3"
+              >
+                Ngắt kết nối
+              </button>
+            </div>
           </div>
         )}
 
@@ -161,6 +206,11 @@ function App() {
       </div>
 
       <ConnectionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <TableDesignerModal 
+        isOpen={isTableModalOpen} 
+        onClose={() => setIsTableModalOpen(false)} 
+        onSave={handleCreateTable} 
+      />
     </div>
   );
 }

@@ -22,3 +22,7 @@ pub fn disconnect(connection_id: String) -> Result<(), DbError> {
 pub fn execute_query(connection_id: String, query: String) -> Result<QueryResult, DbError> {
     run_async(executor::execute_query_internal(&connection_id, &query))
 }
+
+pub fn get_schema(connection_id: String) -> Result<models::DatabaseSchema, DbError> {
+    run_async(executor::get_schema_internal(&connection_id))
+}

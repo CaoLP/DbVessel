@@ -4,7 +4,7 @@
     windows_subsystem = "windows"
 )]
 
-use shared_rust::{connect, disconnect, execute_query, QueryResult, DbError};
+use shared_rust::{connect, disconnect, execute_query, get_schema, QueryResult, DbError};
 
 #[tauri::command]
 fn db_connect(db_type: String, connection_string: String) -> Result<String, String> {
@@ -27,9 +27,16 @@ fn db_execute_query(connection_id: String, query: String) -> Result<QueryResult,
     })
 }
 
+#[tauri::command]
+fn db_get_schema(connection_id: String) -> Result<shared_rust::models::DatabaseSchema, String> {
+    get_schema(connection_id).map_err(|e| match e {
+        DbError::Generic { message } => message,
+    })
+}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![db_connect, db_disconnect, db_execute_query])
+        .invoke_handler(tauri::generate_handler![db_connect, db_disconnect, db_execute_query, db_get_schema])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
