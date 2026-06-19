@@ -132,11 +132,12 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
 
             <div>
               <label className="text-xs text-gray-400 block mb-1">Database Name</label>
-              <input 
-                value={database} 
+              <input
+                required={type !== 'sqlite'}
+                value={database}
                 onChange={e => setDatabase(e.target.value)}
-                className="w-full bg-white/5 border border-space-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition" 
-                placeholder="public"
+                className="w-full bg-white/5 border border-space-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition"
+                placeholder={type === 'mysql' ? 'mysql' : 'postgres'}
               />
             </div>
           </div>

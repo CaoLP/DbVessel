@@ -12,3 +12,17 @@ dist/
 # Rust
 target/
 **/*/target/
+
+# Expo prebuild output (regenerate with `npx expo prebuild`)
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/.expo/
+apps/mobile/android/local.properties
+
+# UniFFI codegen + cargo-ndk build output for db-native (regenerate per
+# apps/mobile/modules/db-native/README.md)
+apps/mobile/modules/db-native/android/generated/
+apps/mobile/modules/db-native/android/src/main/java/uniffi/
+apps/mobile/modules/db-native/android/src/main/jniLibs/
+apps/mobile/modules/db-native/android/build/
+apps/mobile/modules/db-native/ios/generated/

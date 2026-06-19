@@ -5,6 +5,7 @@
   "main": "index.ts",
   "dependencies": {},
   "peerDependencies": {
-    "expo": "*"
+    "expo": "*",
+    "expo-modules-core": "*"
   }
 }
