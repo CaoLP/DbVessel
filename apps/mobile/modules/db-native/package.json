@@ -1,0 +1,11 @@
+{
+  "name": "db-native",
+  "version": "0.1.0",
+  "description": "Native DB bindings",
+  "main": "index.ts",
+  "dependencies": {},
+  "peerDependencies": {
+    "expo": "*",
+    "expo-modules-core": "*"
+  }
+}

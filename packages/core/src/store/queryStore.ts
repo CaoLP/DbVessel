@@ -5,6 +5,7 @@ export interface QueryLog {
   sql: string;
   connectionId: string;
   timestamp: number;
+  isFavorite?: boolean;
 }
 
 export interface SQLSnippet {
@@ -18,7 +19,9 @@ interface QueryState {
   snippets: SQLSnippet[];
   addQueryLog: (sql: string, connectionId: string) => void;
   clearHistory: () => void;
+  toggleFavorite: (id: string) => void;
   addSnippet: (snippet: SQLSnippet) => void;
+  removeSnippet: (id: string) => void;
   clearSnippets: () => void;
 }
 
@@ -39,8 +42,14 @@ export const useQueryStore = create<QueryState>((set) => ({
     return { history: updatedHistory };
   }),
   clearHistory: () => set({ history: [] }),
+  toggleFavorite: (id) => set((state) => ({
+    history: state.history.map((log) => log.id === id ? { ...log, isFavorite: !log.isFavorite } : log)
+  })),
   addSnippet: (snippet) => set((state) => ({
     snippets: [...state.snippets, snippet]
+  })),
+  removeSnippet: (id) => set((state) => ({
+    snippets: state.snippets.filter((s) => s.id !== id)
   })),
   clearSnippets: () => set({ snippets: [] })
 }));

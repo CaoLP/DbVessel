@@ -6,8 +6,15 @@ export interface ConnectionProfile {
   host: string;
   port: number;
   user: string;
+  password?: string;
   database?: string;
   type: 'postgres' | 'mysql' | 'sqlite' | 'mssql' | 'oracle' | 'mongodb' | 'redis';
+  // SSH Tunnel configs (Phase 5)
+  useSshTunnel?: boolean;
+  sshHost?: string;
+  sshPort?: number;
+  sshUser?: string;
+  sshKey?: string;
 }
 
 interface ConnectionState {

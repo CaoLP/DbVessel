@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["DbNativeModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.dbnative.DbNativeModule"]
+  }
+}
