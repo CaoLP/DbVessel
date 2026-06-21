@@ -5,6 +5,7 @@ import { EditorPanel } from './components/EditorPanel';
 import { DataGrid } from './components/DataGrid';
 import { TableDesignerModal } from './components/TableDesignerModal';
 import { HistoryPanel } from './components/HistoryPanel';
+import { PaginationBar } from './components/PaginationBar';
 import { useConnectionStore, useQueryStore, ConnectionProfile } from '@db-client/core';
 import { generateCreateTableSql, DesignerColumn } from './lib/ddl';
 import { escapeIdentifier } from './lib/sql';
@@ -66,6 +67,9 @@ function App() {
     setAffectedRows(null);
     setSchemaByDb({});
     setSchemaErrorByDb({});
+    setBrowseContext(null);
+    setTotalRows(null);
+    setCurrentPage(1);
 
     try {
       let connectionString = '';
@@ -306,6 +310,9 @@ function App() {
     setCurrentDatabase(null);
     setQueryResult([]);
     setAffectedRows(null);
+    setBrowseContext(null);
+    setTotalRows(null);
+    setCurrentPage(1);
     setError(null);
   };
 
@@ -356,7 +363,7 @@ function App() {
       // SQLite has no TRUNCATE statement.
       const sql = activeConnection.type === 'sqlite' ? `DELETE FROM ${ident}` : `TRUNCATE TABLE ${ident}`;
       await tauriInvoke('db_execute_query', { connectionId: dbSessionId, query: sql }).catch((err) => setError(String(err)));
-      if (activeTableName === tableName) await handleExecuteQuery(lastQuery ?? buildViewQuery(dbName, tableName), false);
+      if (activeTableName === tableName) await loadTablePage(dbName, tableName, 1, pageSize, true);
       return;
     }
 
@@ -368,6 +375,8 @@ function App() {
       if (activeTableName === tableName) {
         setActiveTableName(null);
         setQueryResult([]);
+        setBrowseContext(null);
+        setTotalRows(null);
       }
       await handleExpandDatabase(dbName);
       return;
@@ -375,11 +384,16 @@ function App() {
   };
 
   const handleTableDoubleClick = async (dbName: string, tableName: string) => {
-    const switched = await ensureDatabase(dbName);
-    if (!switched) return;
-    const q = buildViewQuery(dbName, tableName);
-    setEditorValue(q);
-    await handleExecuteQuery(q);
+    await loadTablePage(dbName, tableName, 1, pageSize, true);
+  };
+
+  // Hand-typed/Run Query button executions aren't paginated (no safe generic way to COUNT or
+  // LIMIT/OFFSET arbitrary SQL without a real parser), so leaving the table-browse pagination UI
+  // up while showing unrelated query results would be misleading.
+  const handleEditorExecute = (query: string) => {
+    setBrowseContext(null);
+    setTotalRows(null);
+    handleExecuteQuery(query, true);
   };
 
   return (
@@ -450,7 +464,7 @@ function App() {
                 <EditorPanel
                   value={editorValue}
                   onChange={setEditorValue}
-                  onExecute={handleExecuteQuery}
+                  onExecute={handleEditorExecute}
                   isLoading={isLoading}
                   schema={schema}
                 />
@@ -468,13 +482,25 @@ function App() {
                     ✓ Lệnh thực thi thành công. Hàng bị ảnh hưởng: {affectedRows}
                   </div>
                 )}
-                <div className="flex-1 rounded-xl overflow-hidden border border-space-border">
-                  <DataGrid
-                    rowData={queryResult}
-                    tableName={activeTableName}
-                    tableColumns={schema?.tables?.find((t: any) => t.name === activeTableName)?.columns ?? null}
-                    onMutate={handleMutate}
-                  />
+                <div className="flex-1 rounded-xl overflow-hidden border border-space-border flex flex-col">
+                  <div className="flex-1 overflow-hidden">
+                    <DataGrid
+                      rowData={queryResult}
+                      tableName={activeTableName}
+                      tableColumns={schema?.tables?.find((t: any) => t.name === activeTableName)?.columns ?? null}
+                      onMutate={handleMutate}
+                    />
+                  </div>
+                  {browseContext && (
+                    <PaginationBar
+                      currentPage={currentPage}
+                      pageSize={pageSize}
+                      totalRows={totalRows}
+                      onPageChange={handlePageChange}
+                      onPageSizeChange={handlePageSizeChange}
+                      disabled={isLoading}
+                    />
+                  )}
                 </div>
               </div>
             </div>
